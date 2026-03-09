@@ -15,5 +15,6 @@ namespace ProductsDishes.DataAccess.Postgres.Models
         public string Description { get; set; } = string.Empty;
 
         public List<DishIngradientEntity> Ingredients { get; set; } = [];
+        public List<DailyRationEntity> DailyRations { get; set; } = [];
     }
 }
