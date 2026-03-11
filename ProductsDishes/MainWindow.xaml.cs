@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using ProductsDishes.DataAccess.Postgres.Repositories;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -8,6 +9,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using ProductsDishes.DataAccess.Postgres;
+using ProductsDishes.DataAccess.Postgres.Repositories;
 
 namespace ProductsDishes
 {
@@ -16,9 +19,19 @@ namespace ProductsDishes
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        private readonly ProductsDishesDbContext _db;
+
+        public MainWindow(ProductsDishesDbContext db)
         {
             InitializeComponent();
+
+            _db = db;
+
+            var dishesRepository = new DishesRepository(_db);
+            var productsRepository = new ProductsRepository(_db);
+            var dishIngredientsRepository = new DishIngradientsRepository(_db);
+            var userRepository = new UsersRepository(_db);
+            var dailyRationsRepository = new DailyRationsRepository(_db);
         }
     }
 }

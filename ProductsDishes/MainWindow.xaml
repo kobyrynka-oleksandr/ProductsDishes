@@ -4,9 +4,264 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ProductsDishes"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+                Title="Products and Dishes"
+        Width="1100" Height="700"
+        WindowStartupLocation="CenterScreen"
+        Background="#0F172A"
+        FontFamily="Segoe UI">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Padding" Value="10 4"/>
+            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#1D4ED8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
 
+        <Style TargetType="TabItem">
+            <Setter Property="Padding" Value="12 6"/>
+        </Style>
+
+        <Style TargetType="DataGrid">
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="RowBackground" Value="#020617"/>
+            <Setter Property="AlternatingRowBackground" Value="#111827"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#1F2937"/>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Margin" Value="0,0,0,6"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Margin" Value="0,0,0,6"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+
+        <Style x:Key="LightDataGridStyle" TargetType="DataGrid">
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#F3F4F6"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+        </Style>
+
+        <Style x:Key="LightHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#E5E7EB"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Products and Dishes"
+                   FontSize="24"
+                   Foreground="White"
+                   Margin="0,0,0,12"/>
+
+        <TabControl Grid.Row="1">
+
+            <!-- ========== Dishes ========== -->
+            <TabItem Header="Dishes">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Dishes Table -->
+                    <StackPanel Grid.Column="0">
+                        <DataGrid
+                            ItemsSource="{Binding Dishes}"
+                            SelectedItem="{Binding SelectedDish}"
+                            AutoGenerateColumns="False"
+                            Style="{StaticResource LightDataGridStyle}"
+                            ColumnHeaderStyle="{StaticResource LightHeaderStyle}"
+                            IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="3*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+
+
+                    <!-- Dish Editing Form -->
+                    <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                        <TextBlock Text="Edit dish"
+                           FontSize="16"
+                           Foreground="Black"
+                           Margin="0,0,0,8"/>
+
+                        <TextBlock Text="Name" Foreground="Black"/>
+                        <TextBox Text="{Binding EditDishName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Description" Foreground="Black"/>
+                        <TextBox Text="{Binding EditDishDescription, UpdateSourceTrigger=PropertyChanged}"
+                            AcceptsReturn="True" Height="80" TextWrapping="Wrap"/>
+
+                        <!-- Nutritional value -->
+                        <Border BorderBrush="#D1D5DB" BorderThickness="1" Padding="8" Margin="0,8,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Total nutrition (dish)" FontWeight="SemiBold" Foreground="Black"/>
+                                <TextBlock Text="{Binding DishTotalCalories, StringFormat=Calories: {0:F1} kcal}" Foreground="Black"/>
+                                <TextBlock Text="{Binding DishTotalProtein,  StringFormat=Protein: {0:F1} g}"   Foreground="Black"/>
+                                <TextBlock Text="{Binding DishTotalFat,      StringFormat=Fat: {0:F1} g}"       Foreground="Black"/>
+                                <TextBlock Text="{Binding DishTotalCarbs,    StringFormat=Carbs: {0:F1} g}"     Foreground="Black"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Ingredients tab -->
+                        <Button Content="Add/Edit ingredients..."
+                            Command="{Binding EditDishIngredientsCommand}"
+                            Margin="0,8,0,0"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Content="Add" Command="{Binding AddDishCommand}"/>
+                            <Button Content="Update" Command="{Binding UpdateDishCommand}"/>
+                            <Button Content="Delete" Command="{Binding DeleteDishCommand}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Page"
+                            FontSize="16"
+                            Foreground="Black"
+                            HorizontalAlignment="Center"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="&lt; Prev"
+                                Command="{Binding PrevDishesPageCommand}"/>
+
+                            <TextBlock Text="{Binding DishesCurrentPage}"
+                                Foreground="Black"
+                                VerticalAlignment="Center"
+                                Margin="8,0"/>
+
+                            <Button Content="Next &gt;"
+                                Command="{Binding NextDishesPageCommand}"/>
+                        </StackPanel>
+                        <TextBlock Text="Search by name"
+                           FontSize="16"
+                           Foreground="Black"
+                           HorizontalAlignment="Center"
+                           Margin="0,12,0,4"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBox Width="150"
+                                 Text="{Binding DishSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,8,0"/>
+                            <Button Content="Search"
+                                Command="{Binding SearchDishesCommand}"/>
+                            <Button Content="Clear"
+                                Command="{Binding ClearDishesSearchCommand}"/>
+                        </StackPanel>
+
+                    </StackPanel>
+
+                </Grid>
+            </TabItem>
+
+            <!-- ========== Products ========== -->
+            <TabItem Header="Products">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <DataGrid
+                            ItemsSource="{Binding Products}"
+                            SelectedItem="{Binding SelectedProduct}"
+                            AutoGenerateColumns="False"
+                            IsReadOnly="True"
+                            Style="{StaticResource LightDataGridStyle}"
+                            ColumnHeaderStyle="{StaticResource LightHeaderStyle}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                                <DataGridTextColumn Header="Calories" Binding="{Binding CaloriesPer100}" Width="*"/>
+                                <DataGridTextColumn Header="Protein" Binding="{Binding ProteinPer100}" Width="*"/>
+                                <DataGridTextColumn Header="Fat" Binding="{Binding FatPer100}" Width="*"/>
+                                <DataGridTextColumn Header="Carbs" Binding="{Binding CarbsPer100}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+
+                    <!-- Product Editing Form -->
+                    <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                        <TextBlock Text="Edit product"
+                                   FontSize="16"
+                                   Foreground="Black"
+                                   Margin="0,0,0,8"/>
+
+                        <TextBlock Text="Name" Foreground="Black"/>
+                        <TextBox Text="{Binding EditProductName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Calories / 100g" Foreground="Black"/>
+                        <TextBox Text="{Binding EditProductCalories, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Protein / 100g" Foreground="Black"/>
+                        <TextBox Text="{Binding EditProductProtein, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Fat / 100g" Foreground="Black"/>
+                        <TextBox Text="{Binding EditProductFat, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Carbs / 100g" Foreground="Black"/>
+                        <TextBox Text="{Binding EditProductCarbs, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Content="Add" Command="{Binding AddProductCommand}"/>
+                            <Button Content="Update" Command="{Binding UpdateProductCommand}"/>
+                            <Button Content="Delete" Command="{Binding DeleteProductCommand}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Page"
+                               FontSize="16"
+                               Foreground="Black"
+                               HorizontalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="&lt; Prev"
+                                Command="{Binding PrevProductsPageCommand}"/>
+
+                            <TextBlock Text="{Binding ProductsCurrentPage}"
+                                 Foreground="Black"
+                                 VerticalAlignment="Center"
+                                 Margin="8,0"/>
+
+                            <Button Content="Next &gt;"
+                                 Command="{Binding NextProductsPageCommand}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Search by name"
+                           FontSize="16"
+                           Foreground="Black"
+                           HorizontalAlignment="Center"
+                           Margin="0,12,0,4"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBox Width="150"
+                             Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,8,0"/>
+
+                            <Button Content="Search"
+                                Command="{Binding SearchProductsCommand}"/>
+
+                            <Button Content="Clear"
+                                Command="{Binding ClearProductsSearchCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+        </TabControl>
     </Grid>
 </Window>
