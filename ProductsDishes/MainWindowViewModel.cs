@@ -476,14 +476,26 @@ namespace ProductsDishes
                 MessageBox.Show(ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            await LoadAllAsync();
         }
 
         private async Task DeleteDishAsync()
         {
             if (SelectedDish == null) return;
-            await _dishesRepository.Delete(SelectedDish.Id);
-            await LoadAllAsync();
+
+            var result = MessageBox.Show(
+                $"Delete dish \"{SelectedDish.Name}\"?",
+                "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes) return;
+
+            try
+            {
+                await _dishesRepository.Delete(SelectedDish.Id);
+                await LoadAllAsync();
+            }
+            catch (InvalidOperationException ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadDishToEdit(DishEntity? dish)
@@ -607,7 +619,6 @@ namespace ProductsDishes
                 MessageBox.Show(ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            await LoadAllAsync();
         }
 
         private async Task UpdateProductAsync()
@@ -636,14 +647,26 @@ namespace ProductsDishes
                 MessageBox.Show(ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            await LoadAllAsync();
         }
 
         private async Task DeleteProductAsync()
         {
             if (SelectedProduct == null) return;
-            await _productsRepository.Delete(SelectedProduct.Id);
-            await LoadAllAsync();
+
+            var result = MessageBox.Show(
+                $"Delete product \"{SelectedProduct.Name}\"?",
+                "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes) return;
+
+            try
+            {
+                await _productsRepository.Delete(SelectedProduct.Id);
+                await LoadAllAsync();
+            }
+            catch (InvalidOperationException ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadProductToEdit(ProductEntity? product)
@@ -912,10 +935,6 @@ namespace ProductsDishes
             var rng = new Random();
             var shuffled = scored.OrderBy(_ => rng.Next()).ToList();
 
-            BreakfastDishes.Clear();
-            LunchDishes.Clear();
-            DinnerDishes.Clear();
-
             var usedIds = new HashSet<Guid>();
 
             FillMealNoDupes(BreakfastDishes, shuffled, breakfastTarget, "Breakfast", usedIds);
@@ -1117,13 +1136,18 @@ namespace ProductsDishes
 
             if (result != MessageBoxResult.Yes) return;
 
-            await _usersRepository.Delete(SelectedUser.Id);
-
-            if (_currentUser?.Id == SelectedUser.Id)
-                _currentUser = null;
-
-            await LoadSavedUsersAsync();
-            await LoadSavedRationDatesAsync();
+            try
+            {
+                await _usersRepository.Delete(SelectedUser.Id);
+                if (_currentUser?.Id == SelectedUser.Id)
+                    _currentUser = null;
+                await LoadSavedUsersAsync();
+                await LoadSavedRationDatesAsync();
+            }
+            catch (InvalidOperationException ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // ======= Load selected ration =======
@@ -1180,20 +1204,40 @@ namespace ProductsDishes
             if (result != MessageBoxResult.Yes) return;
 
             var parts = SelectedRationDate.Split(" | ");
-            var date = DateOnly.Parse(parts[0]);
-            var userName = parts.Length > 1 ? parts[1] : string.Empty;
+
+            if (parts.Length < 2 || !DateOnly.TryParse(parts[0], out var date))
+            {
+                MessageBox.Show("Invalid ration date format.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var userName = parts[1];
             var user = SavedUsers.FirstOrDefault(u => u.Name == userName);
 
-            if (user == null) return;
+            if (user == null)
+            {
+                MessageBox.Show("User not found.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
-            await _dailyRationsRepository.DeleteByUserAndDateAsync(user.Id, date);
+            try
+            {
+                await _dailyRationsRepository.DeleteByUserAndDateAsync(user.Id, date);
 
-            BreakfastDishes.Clear();
-            LunchDishes.Clear();
-            DinnerDishes.Clear();
-            RecalculateRationTotals();
+                BreakfastDishes.Clear();
+                LunchDishes.Clear();
+                DinnerDishes.Clear();
+                RecalculateRationTotals();
 
-            await LoadSavedRationDatesAsync();
+                await LoadSavedRationDatesAsync();
+            }
+            catch (InvalidOperationException ex)
+            {
+                MessageBox.Show(ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         // ======= INotifyPropertyChanged =======
 
