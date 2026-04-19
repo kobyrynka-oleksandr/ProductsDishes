@@ -34,10 +34,19 @@ namespace ProductsDishes.DataAccess.Postgres.Configurations
                    .IsRequired()
                    .HasMaxLength(10);
 
-            builder
-                .HasMany(u => u.DailyRations)
-                .WithOne(r => r.User)
-                .HasForeignKey(r => r.UserId);
+            builder.Property(u => u.ActivityLevel)
+                   .IsRequired()
+                   .HasMaxLength(50)
+                   .HasDefaultValue("Sedentary");
+
+            builder.Property(u => u.Goal)
+                   .IsRequired()
+                   .HasMaxLength(50)
+                   .HasDefaultValue("Maintain weight");
+
+            builder.HasMany(u => u.DailyRations)
+                   .WithOne(r => r.User)
+                   .HasForeignKey(r => r.UserId);
         }
     }
 }

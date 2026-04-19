@@ -15,7 +15,6 @@ namespace ProductsDishes.DataAccess.Postgres.Models
 
         public DateOnly Date { get; set; }
 
-        public List<DishEntity> Dishes { get; set; } = [];
+        public List<DailyRationDishEntity> RationDishes { get; set; } = [];
     }
-
 }

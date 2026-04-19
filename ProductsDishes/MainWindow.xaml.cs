@@ -32,6 +32,13 @@ namespace ProductsDishes
             var dishIngredientsRepository = new DishIngradientsRepository(_db);
             var userRepository = new UsersRepository(_db);
             var dailyRationsRepository = new DailyRationsRepository(_db);
+
+            DataContext = new MainWindowViewModel(
+                dishesRepository,
+                productsRepository,
+                dishIngredientsRepository,
+                userRepository,
+                dailyRationsRepository);
         }
     }
 }

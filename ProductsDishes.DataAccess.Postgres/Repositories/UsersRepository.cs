@@ -24,15 +24,6 @@ namespace ProductsDishes.DataAccess.Postgres.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<UserEntity>> GetWithRationsAsync()
-        {
-            return await _dbContext.Users
-                .AsNoTracking()
-                .Include(u => u.DailyRations)
-                    .ThenInclude(r => r.Dishes)
-                .ToListAsync();
-        }
-
         public async Task<UserEntity?> GetById(Guid id)
         {
             if (id == Guid.Empty)
@@ -40,18 +31,6 @@ namespace ProductsDishes.DataAccess.Postgres.Repositories
 
             return await _dbContext.Users
                 .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == id);
-        }
-
-        public async Task<UserEntity?> GetWithRationsByIdAsync(Guid id)
-        {
-            if (id == Guid.Empty)
-                throw new ArgumentException("User id must not be empty.", nameof(id));
-
-            return await _dbContext.Users
-                .AsNoTracking()
-                .Include(u => u.DailyRations)
-                    .ThenInclude(r => r.Dishes)
                 .FirstOrDefaultAsync(u => u.Id == id);
         }
 
@@ -94,9 +73,9 @@ namespace ProductsDishes.DataAccess.Postgres.Repositories
         }
 
         public async Task Add(Guid id, string name, int age, decimal heightCm,
-            decimal weightKg, string gender)
+    decimal weightKg, string gender, string activityLevel, string goal)
         {
-            ValidateUser(id, name, age, heightCm, weightKg, gender);
+            ValidateUser(id, name, age, heightCm, weightKg, gender, activityLevel, goal);
 
             var exists = await _dbContext.Users.AnyAsync(u => u.Id == id);
             if (exists)
@@ -113,7 +92,9 @@ namespace ProductsDishes.DataAccess.Postgres.Repositories
                 Age = age,
                 HeightCm = heightCm,
                 WeightKg = weightKg,
-                Gender = gender.Trim()
+                Gender = gender.Trim(),
+                ActivityLevel = activityLevel.Trim(),
+                Goal = goal.Trim()
             };
 
             await _dbContext.Users.AddAsync(user);
@@ -121,9 +102,9 @@ namespace ProductsDishes.DataAccess.Postgres.Repositories
         }
 
         public async Task Update(Guid id, string name, int age, decimal heightCm,
-            decimal weightKg, string gender)
+            decimal weightKg, string gender, string activityLevel, string goal)
         {
-            ValidateUser(id, name, age, heightCm, weightKg, gender);
+            ValidateUser(id, name, age, heightCm, weightKg, gender, activityLevel, goal);
 
             if (!await _dbContext.Users.AnyAsync(u => u.Id == id))
                 throw new InvalidOperationException("User to update was not found.");
@@ -140,8 +121,9 @@ namespace ProductsDishes.DataAccess.Postgres.Repositories
                     .SetProperty(u => u.Age, age)
                     .SetProperty(u => u.HeightCm, heightCm)
                     .SetProperty(u => u.WeightKg, weightKg)
-                    .SetProperty(u => u.Gender, gender.Trim()));
-
+                    .SetProperty(u => u.Gender, gender.Trim())
+                    .SetProperty(u => u.ActivityLevel, activityLevel.Trim())
+                    .SetProperty(u => u.Goal, goal.Trim()));
         }
 
         public async Task Delete(Guid id)
@@ -157,8 +139,17 @@ namespace ProductsDishes.DataAccess.Postgres.Repositories
                 throw new InvalidOperationException("User to delete was not found.");
         }
 
+        public async Task<List<UserEntity>> GetAllAsync()
+        {
+            return await _dbContext.Users
+                .AsNoTracking()
+                .OrderBy(u => u.Name)
+                .ToListAsync();
+        }
+
         private static void ValidateUser(Guid id, string name, int age,
-            decimal heightCm, decimal weightKg, string gender)
+            decimal heightCm, decimal weightKg, string gender,
+            string activityLevel, string goal)
         {
             if (id == Guid.Empty)
                 throw new ArgumentException("User id must not be empty.", nameof(id));
@@ -167,17 +158,25 @@ namespace ProductsDishes.DataAccess.Postgres.Repositories
                 throw new ArgumentException("User name is required.", nameof(name));
 
             if (age < 1 || age > 140)
-                throw new ArgumentOutOfRangeException(nameof(age), "Age must be between 1 and 140.");
+                throw new ArgumentOutOfRangeException(nameof(age));
 
             if (heightCm < 50 || heightCm > 300)
-                throw new ArgumentOutOfRangeException(nameof(heightCm), "Height must be between 50cm and 300cm.");
+                throw new ArgumentOutOfRangeException(nameof(heightCm));
 
             if (weightKg < 20 || weightKg > 500)
-                throw new ArgumentOutOfRangeException(nameof(weightKg), "Weight must be between 20kg and 500kg.");
+                throw new ArgumentOutOfRangeException(nameof(weightKg));
 
             if (string.IsNullOrWhiteSpace(gender) ||
                 (gender.Trim().ToLower() != "male" && gender.Trim().ToLower() != "female"))
                 throw new ArgumentException("Gender must be 'Male' or 'Female'.", nameof(gender));
+
+            var validActivity = new[] { "Sedentary", "Light", "Moderate", "Active", "Very Active" };
+            if (!validActivity.Contains(activityLevel.Trim()))
+                throw new ArgumentException("Invalid activity level.", nameof(activityLevel));
+
+            var validGoals = new[] { "Lose weight", "Maintain weight", "Gain weight" };
+            if (!validGoals.Contains(goal.Trim()))
+                throw new ArgumentException("Invalid goal.", nameof(goal));
         }
     }
 }

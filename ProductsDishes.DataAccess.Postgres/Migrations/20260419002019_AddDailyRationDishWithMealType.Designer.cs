@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ProductsDishes.DataAccess.Postgres;
@@ -11,9 +12,11 @@ using ProductsDishes.DataAccess.Postgres;
 namespace ProductsDishes.DataAccess.Postgres.Migrations
 {
     [DbContext(typeof(ProductsDishesDbContext))]
-    partial class ProductsDishesDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260419002019_AddDailyRationDishWithMealType")]
+    partial class AddDailyRationDishWithMealType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

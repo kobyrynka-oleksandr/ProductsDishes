@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProductsDishes.DataAccess.Postgres.Configurations;
+using ProductsDishes.DataAccess.Postgres.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,7 @@ namespace ProductsDishes.DataAccess.Postgres
         public DbSet<Models.DishIngradientEntity> DishIngredients { get; set; } = null!;
         public DbSet<Models.UserEntity> Users { get; set; } = null!;
         public DbSet<Models.DailyRationEntity> DailyRations { get; set; } = null!;
+        public DbSet<DailyRationDishEntity> DailyRationDishes { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new ProductConfiguration());
@@ -26,6 +28,7 @@ namespace ProductsDishes.DataAccess.Postgres
             modelBuilder.ApplyConfiguration(new DishIngradientConfiguration());
             modelBuilder.ApplyConfiguration(new UserConfiguration());
             modelBuilder.ApplyConfiguration(new DailyRationConfiguration());
+            modelBuilder.ApplyConfiguration(new DailyRationDishConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }

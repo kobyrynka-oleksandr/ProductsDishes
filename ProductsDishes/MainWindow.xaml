@@ -262,6 +262,202 @@
                 </Grid>
             </TabItem>
 
+            <!-- ========== My Profile & Daily Ration ========== -->
+            <TabItem Header="My Profile">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="2*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- ===== Left: User Profile Form ===== -->
+                        <StackPanel Grid.Column="0" Margin="0,0,16,0">
+
+                            <!-- SELECT SAVED PROFILE -->
+                            <TextBlock Text="Saved profiles"
+                           FontSize="14" FontWeight="SemiBold"
+                           Foreground="#94A3B8" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding SavedUsers}"
+                          SelectedItem="{Binding SelectedUser}"
+                          DisplayMemberPath="Name"
+                          Margin="0,0,0,4"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <Button Content="Load profile"
+                            Command="{Binding LoadUserCommand}"/>
+                                <Button Content="Delete profile"
+                            Command="{Binding DeleteUserCommand}"/>
+                            </StackPanel>
+
+                            <Separator Background="#1F2937" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="My characteristics"
+                           FontSize="18" FontWeight="SemiBold"
+                           Foreground="White" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Name" Foreground="#94A3B8"/>
+                            <TextBox Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Text="Age" Foreground="#94A3B8"/>
+                            <TextBox Text="{Binding UserAge, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Text="Weight (kg)" Foreground="#94A3B8"/>
+                            <TextBox Text="{Binding UserWeight, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Text="Height (cm)" Foreground="#94A3B8"/>
+                            <TextBox Text="{Binding UserHeight, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Text="Gender" Foreground="#94A3B8"/>
+                            <ComboBox SelectedValue="{Binding UserGender}"
+                          SelectedValuePath="Content">
+                                <ComboBoxItem Content="Male"/>
+                                <ComboBoxItem Content="Female"/>
+                            </ComboBox>
+
+                            <TextBlock Text="Activity level" Foreground="#94A3B8"/>
+                            <ComboBox SelectedValue="{Binding UserActivityLevel}"
+                          SelectedValuePath="Content">
+                                <ComboBoxItem Content="Sedentary"/>
+                                <ComboBoxItem Content="Light"/>
+                                <ComboBoxItem Content="Moderate"/>
+                                <ComboBoxItem Content="Active"/>
+                                <ComboBoxItem Content="Very Active"/>
+                            </ComboBox>
+
+                            <TextBlock Text="Goal" Foreground="#94A3B8"/>
+                            <ComboBox SelectedValue="{Binding UserGoal}"
+                          SelectedValuePath="Content">
+                                <ComboBoxItem Content="Lose weight"/>
+                                <ComboBoxItem Content="Maintain weight"/>
+                                <ComboBoxItem Content="Gain weight"/>
+                            </ComboBox>
+
+                            <Button Content="Save profile"
+                        Command="{Binding SaveUserCommand}"
+                        Margin="0,12,0,0"/>
+
+                            <!-- Calculated norms -->
+                            <Border BorderBrush="#1F2937" BorderThickness="1"
+                        Padding="10" Margin="0,16,0,0"
+                        Background="#0F172A">
+                                <StackPanel>
+                                    <TextBlock Text="Daily norm" FontWeight="SemiBold"
+                                   Foreground="White" Margin="0,0,0,6"/>
+                                    <TextBlock Text="{Binding DailyCaloriesNorm, StringFormat='Calories: {0:F0} kcal'}"
+                                   Foreground="#94A3B8"/>
+                                    <TextBlock Text="{Binding DailyProteinNorm, StringFormat='Protein: {0:F1} g'}"
+                                   Foreground="#94A3B8"/>
+                                    <TextBlock Text="{Binding DailyFatNorm, StringFormat='Fat: {0:F1} g'}"
+                                   Foreground="#94A3B8"/>
+                                    <TextBlock Text="{Binding DailyCarbsNorm, StringFormat='Carbs: {0:F1} g'}"
+                                   Foreground="#94A3B8"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Button Content="Generate daily ration"
+                        Command="{Binding GenerateDailyRationCommand}"
+                        Margin="0,8,0,0"/>
+                        </StackPanel>
+
+                        <!-- ===== Right: Daily Ration ===== -->
+                        <StackPanel Grid.Column="1">
+
+                            <!-- SELECT SAVED RATION -->
+                            <TextBlock Text="Saved rations"
+                           FontSize="14" FontWeight="SemiBold"
+                           Foreground="#94A3B8" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding SavedRationDates}"
+                          SelectedItem="{Binding SelectedRationDate}"
+                          Margin="0,0,0,4"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <Button Content="Load ration"
+                            Command="{Binding LoadRationCommand}"/>
+                                <Button Content="Delete ration"
+                            Command="{Binding DeleteRationCommand}"/>
+                            </StackPanel>
+
+                            <Separator Background="#1F2937" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Daily ration"
+                           FontSize="18" FontWeight="SemiBold"
+                           Foreground="White" Margin="0,0,0,12"/>
+
+                            <!-- Breakfast -->
+                            <TextBlock Text="🍳 Breakfast (25%)" Foreground="#60A5FA"
+                           FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <DataGrid ItemsSource="{Binding BreakfastDishes}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          Style="{StaticResource LightDataGridStyle}"
+                          ColumnHeaderStyle="{StaticResource LightHeaderStyle}"
+                          MaxHeight="160">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Dish" Binding="{Binding Name}" Width="2*"/>
+                                    <DataGridTextColumn Header="Calories" Binding="{Binding TotalCalories, StringFormat={}{0:F0}}" Width="*"/>
+                                    <DataGridTextColumn Header="Protein"  Binding="{Binding TotalProtein,  StringFormat={}{0:F1}}" Width="*"/>
+                                    <DataGridTextColumn Header="Fat"      Binding="{Binding TotalFat,      StringFormat={}{0:F1}}" Width="*"/>
+                                    <DataGridTextColumn Header="Carbs"    Binding="{Binding TotalCarbs,    StringFormat={}{0:F1}}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- Lunch -->
+                            <TextBlock Text="🍽️ Lunch (40%)" Foreground="#34D399"
+                           FontWeight="SemiBold" Margin="0,12,0,4"/>
+                            <DataGrid ItemsSource="{Binding LunchDishes}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          Style="{StaticResource LightDataGridStyle}"
+                          ColumnHeaderStyle="{StaticResource LightHeaderStyle}"
+                          MaxHeight="160">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Dish" Binding="{Binding Name}" Width="2*"/>
+                                    <DataGridTextColumn Header="Calories" Binding="{Binding TotalCalories, StringFormat={}{0:F0}}" Width="*"/>
+                                    <DataGridTextColumn Header="Protein"  Binding="{Binding TotalProtein,  StringFormat={}{0:F1}}" Width="*"/>
+                                    <DataGridTextColumn Header="Fat"      Binding="{Binding TotalFat,      StringFormat={}{0:F1}}" Width="*"/>
+                                    <DataGridTextColumn Header="Carbs"    Binding="{Binding TotalCarbs,    StringFormat={}{0:F1}}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- Dinner -->
+                            <TextBlock Text="🌙 Dinner (35%)" Foreground="#F472B6"
+                           FontWeight="SemiBold" Margin="0,12,0,4"/>
+                            <DataGrid ItemsSource="{Binding DinnerDishes}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          Style="{StaticResource LightDataGridStyle}"
+                          ColumnHeaderStyle="{StaticResource LightHeaderStyle}"
+                          MaxHeight="160">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Dish" Binding="{Binding Name}" Width="2*"/>
+                                    <DataGridTextColumn Header="Calories" Binding="{Binding TotalCalories, StringFormat={}{0:F0}}" Width="*"/>
+                                    <DataGridTextColumn Header="Protein"  Binding="{Binding TotalProtein,  StringFormat={}{0:F1}}" Width="*"/>
+                                    <DataGridTextColumn Header="Fat"      Binding="{Binding TotalFat,      StringFormat={}{0:F1}}" Width="*"/>
+                                    <DataGridTextColumn Header="Carbs"    Binding="{Binding TotalCarbs,    StringFormat={}{0:F1}}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- Total summary -->
+                            <Border BorderBrush="#1F2937" BorderThickness="1"
+                        Padding="10" Margin="0,12,0,0"
+                        Background="#0F172A">
+                                <StackPanel>
+                                    <TextBlock Text="Ration total" FontWeight="SemiBold"
+                                   Foreground="White" Margin="0,0,0,6"/>
+                                    <TextBlock Text="{Binding RationTotalCalories, StringFormat='Calories: {0:F0} kcal'}"
+                                   Foreground="#94A3B8"/>
+                                    <TextBlock Text="{Binding RationTotalProtein, StringFormat='Protein: {0:F1} g'}"
+                                   Foreground="#94A3B8"/>
+                                    <TextBlock Text="{Binding RationTotalFat, StringFormat='Fat: {0:F1} g'}"
+                                   Foreground="#94A3B8"/>
+                                    <TextBlock Text="{Binding RationTotalCarbs, StringFormat='Carbs: {0:F1} g'}"
+                                   Foreground="#94A3B8"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Button Content="Save ration to DB"
+                        Command="{Binding SaveRationCommand}"
+                        Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>
