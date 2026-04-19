@@ -30,6 +30,7 @@ namespace ProductsDishes
         public string ProductSearchText { get; set; } = string.Empty;
         private List<ProductEntity> _allProducts = new();
 
+        private readonly bool _isNewDish;
 
         public ICommand SearchProductsCommand { get; }
         public ICommand ClearProductsSearchCommand { get; }
@@ -39,15 +40,21 @@ namespace ProductsDishes
         public ICommand DeleteIngredientCommand { get; }
 
         public event PropertyChangedEventHandler? PropertyChanged;
+        public List<DishIngradientEntity> IngredientsToSave { get; private set; } = new();
+        public bool HasIngredients => IngredientsToSave.Count > 0 || Ingredients.Count > 0;
 
         public EditDishIngredientsViewModel(
-            DishEntity dish,
-            ProductsRepository productsRepository,
-            DishIngradientsRepository dishIngredientsRepository)
+                DishEntity dish,
+                ProductsRepository productsRepository,
+                DishIngradientsRepository dishIngredientsRepository,
+                bool isNewDish = false)
         {
             _dish = dish;
             _productsRepository = productsRepository;
             _dishIngredientsRepository = dishIngredientsRepository;
+
+            _dish = dish;
+            _isNewDish = isNewDish;
 
             AddIngredientCommand = new RelayCommand(async _ => await AddAsync());
             UpdateIngredientCommand = new RelayCommand(async _ => await UpdateAsync(), _ => SelectedIngredient != null);
@@ -63,14 +70,16 @@ namespace ProductsDishes
         private async Task LoadAsync()
         {
             _allProducts = await _productsRepository.Get();
-
             Products.Clear();
             foreach (var p in _allProducts)
                 Products.Add(p);
 
-            Ingredients.Clear();
-            foreach (var di in await _dishIngredientsRepository.GetByDishAsync(_dish.Id))
-                Ingredients.Add(di);
+            if (!_isNewDish)
+            {
+                Ingredients.Clear();
+                foreach (var di in await _dishIngredientsRepository.GetByDishAsync(_dish.Id))
+                    Ingredients.Add(di);
+            }
         }
 
 
@@ -95,8 +104,31 @@ namespace ProductsDishes
                 return;
             }
 
-            await _dishIngredientsRepository.AddAsync(_dish.Id, SelectedProduct.Id, q);
-            await LoadAsync();
+            if (_isNewDish)
+            {
+                var existing = IngredientsToSave
+                    .FirstOrDefault(i => i.ProductId == SelectedProduct.Id);
+
+                if (existing != null)
+                    existing.QuantityGrams = q;
+                else
+                    IngredientsToSave.Add(new DishIngradientEntity
+                    {
+                        DishId = _dish.Id,
+                        ProductId = SelectedProduct.Id,
+                        QuantityGrams = q,
+                        Product = SelectedProduct  
+                    });
+
+                Ingredients.Clear();
+                foreach (var i in IngredientsToSave)
+                    Ingredients.Add(i);
+            }
+            else
+            {
+                await _dishIngredientsRepository.AddAsync(_dish.Id, SelectedProduct.Id, q);
+                await LoadAsync();
+            }
         }
 
         private async Task UpdateAsync()
@@ -121,11 +153,20 @@ namespace ProductsDishes
         {
             if (SelectedIngredient == null) return;
 
-            await _dishIngredientsRepository.DeleteAsync(
-                SelectedIngredient.DishId,
-                SelectedIngredient.ProductId);
-
-            await LoadAsync();
+            if (_isNewDish)
+            {
+                IngredientsToSave.RemoveAll(i => i.ProductId == SelectedIngredient.ProductId);
+                Ingredients.Clear();
+                foreach (var i in IngredientsToSave)
+                    Ingredients.Add(i);
+            }
+            else
+            {
+                await _dishIngredientsRepository.DeleteAsync(
+                    SelectedIngredient.DishId,
+                    SelectedIngredient.ProductId);
+                await LoadAsync();
+            }
         }
         private void ApplyProductFilter()
         {

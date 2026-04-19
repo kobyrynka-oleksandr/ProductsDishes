@@ -112,7 +112,12 @@ namespace ProductsDishes.DataAccess.Postgres.Repositories
                 Id = id,
                 Name = name.Trim(),
                 Description = description?.Trim() ?? string.Empty,
-                Ingredients = ingredients
+                Ingredients = ingredients.Select(i => new DishIngradientEntity
+                {
+                    DishId = id,
+                    ProductId = i.ProductId,
+                    QuantityGrams = i.QuantityGrams
+                }).ToList()
             };
 
             await _dbContext.AddAsync(dishEntity);
@@ -179,6 +184,12 @@ namespace ProductsDishes.DataAccess.Postgres.Repositories
 
             if (affected == 0)
                 throw new InvalidOperationException("Dish to delete was not found.");
+        }
+
+        public async Task<bool> ExistsByNameAsync(string name)
+        {
+            return await _dbContext.Dishes
+                .AnyAsync(d => d.Name == name);
         }
 
         private static void ValidateIngredients(List<DishIngradientEntity> ingredients)

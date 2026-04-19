@@ -389,8 +389,6 @@ namespace ProductsDishes
 
         private async Task AddDishAsync()
         {
-            var id = Guid.NewGuid();
-
             if (!TryValidateDish())
             {
                 MessageBox.Show("Dish name is required.", "Error",
@@ -398,13 +396,52 @@ namespace ProductsDishes
                 return;
             }
 
+            var nameExists = await _dishesRepository.ExistsByNameAsync(EditDishName.Trim());
+            if (nameExists)
+            {
+                MessageBox.Show("Dish with the same name already exists.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var tempDish = new DishEntity
+            {
+                Id = Guid.NewGuid(),
+                Name = EditDishName.Trim(),
+                Description = EditDishDescription?.Trim() ?? string.Empty,
+                Ingredients = new List<DishIngradientEntity>()
+            };
+
+            var vm = new EditDishIngredientsViewModel(
+                tempDish,
+                _productsRepository,
+                _dishIngredientsRepository,
+                isNewDish: true);
+
+            var window = new EditDishIngredientsWindow
+            {
+                DataContext = vm,
+                Owner = Application.Current.MainWindow
+            };
+            window.ShowDialog();
+
+            if (!vm.HasIngredients)
+            {
+                MessageBox.Show(
+                    "Dish must have at least one ingredient.",
+                    "Validation",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
             try
             {
                 await _dishesRepository.Add(
-                    id,
-                    EditDishName,
-                    EditDishDescription,
-                    new List<DishIngradientEntity>());
+                    tempDish.Id,
+                    tempDish.Name,
+                    tempDish.Description,
+                    vm.IngredientsToSave);
 
                 await LoadAllAsync();
             }
@@ -413,7 +450,6 @@ namespace ProductsDishes
                 MessageBox.Show(ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            await LoadAllAsync();
         }
 
         private async Task UpdateDishAsync()
