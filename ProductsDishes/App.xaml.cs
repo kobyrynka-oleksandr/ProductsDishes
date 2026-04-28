@@ -1,9 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using ProductsDishes.DataAccess.Postgres;
-using Microsoft.EntityFrameworkCore;
+using ProductsDishes.DataAccess.Postgres.Repositories;
+using System.Windows;
 
 namespace ProductsDishes
 {
@@ -27,6 +28,7 @@ namespace ProductsDishes
                         options.UseNpgsql(connectionString));
 
                     services.AddTransient<MainWindow>();
+                    services.AddTransient<NormCoefficientsRepository>();
                 })
                 .Build();
         }

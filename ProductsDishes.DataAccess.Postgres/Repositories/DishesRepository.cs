@@ -203,5 +203,8 @@ namespace ProductsDishes.DataAccess.Postgres.Repositories
                     throw new ArgumentException("Ingredient quantity must be greater than zero.", nameof(ingredients));
             }
         }
+
+        public async Task<List<DishEntity>> GetAllForPickerAsync()
+            => await _dbContext.Dishes.OrderBy(d => d.Name).ToListAsync();
     }
 }

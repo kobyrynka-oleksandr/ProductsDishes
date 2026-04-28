@@ -56,6 +56,8 @@
             <Setter Property="Foreground" Value="Black"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
+
+        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
     </Window.Resources>
 
     <Grid Margin="16">
@@ -354,6 +356,32 @@
                                 </StackPanel>
                             </Border>
 
+                            <!-- Feature 4: Repetition checkbox -->
+                            <CheckBox Content="Allow dish repetition in ration"
+                              IsChecked="{Binding AllowDishRepetition}"
+                              Foreground="#94A3B8" Margin="0,8,0,0"/>
+
+                            <!-- Manual ration building -->
+                            <Separator Background="#1F2937" Margin="0,12,0,12"/>
+                            <TextBlock Text="Add dish manually" FontSize="14" FontWeight="SemiBold"
+                                Foreground="#94A3B8" Margin="0,0,0,4"/>
+
+                            <ComboBox ItemsSource="{Binding AllDishesForPicker}"
+                              SelectedItem="{Binding SelectedDishForRation}"
+                              DisplayMemberPath="Name"/>
+
+                            <ComboBox SelectedValue="{Binding SelectedMealType}"
+                                SelectedValuePath="Content">
+                                <ComboBoxItem Content="Breakfast"/>
+                                <ComboBoxItem Content="Lunch"/>
+                                <ComboBoxItem Content="Dinner"/>
+                            </ComboBox>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <Button Content="Add to ration"   Command="{Binding AddDishToRationCommand}"/>
+                                <Button Content="Remove selected" Command="{Binding RemoveDishFromRationCommand}"/>
+                            </StackPanel>
+
                             <Button Content="Generate daily ration"
                         Command="{Binding GenerateDailyRationCommand}"
                         Margin="0,8,0,0"/>
@@ -385,7 +413,9 @@
                             <!-- Breakfast -->
                             <TextBlock Text="🍳 Breakfast (25%)" Foreground="#60A5FA"
                            FontWeight="SemiBold" Margin="0,0,0,4"/>
-                            <DataGrid ItemsSource="{Binding BreakfastDishes}"
+                            <DataGrid x:Name="BreakfastGrid"
+                          ItemsSource="{Binding BreakfastDishes}"
+                          SelectionChanged="RationGrid_SelectionChanged"
                           AutoGenerateColumns="False" IsReadOnly="True"
                           Style="{StaticResource LightDataGridStyle}"
                           ColumnHeaderStyle="{StaticResource LightHeaderStyle}"
@@ -402,7 +432,9 @@
                             <!-- Lunch -->
                             <TextBlock Text="🍽️ Lunch (40%)" Foreground="#34D399"
                            FontWeight="SemiBold" Margin="0,12,0,4"/>
-                            <DataGrid ItemsSource="{Binding LunchDishes}"
+                            <DataGrid x:Name="LunchGrid" 
+                          ItemsSource="{Binding LunchDishes}"
+                          SelectionChanged="RationGrid_SelectionChanged"
                           AutoGenerateColumns="False" IsReadOnly="True"
                           Style="{StaticResource LightDataGridStyle}"
                           ColumnHeaderStyle="{StaticResource LightHeaderStyle}"
@@ -419,7 +451,9 @@
                             <!-- Dinner -->
                             <TextBlock Text="🌙 Dinner (35%)" Foreground="#F472B6"
                            FontWeight="SemiBold" Margin="0,12,0,4"/>
-                            <DataGrid ItemsSource="{Binding DinnerDishes}"
+                            <DataGrid x:Name="DinnerGrid"
+                          ItemsSource="{Binding DinnerDishes}"
+                          SelectionChanged="RationGrid_SelectionChanged"
                           AutoGenerateColumns="False" IsReadOnly="True"
                           Style="{StaticResource LightDataGridStyle}"
                           ColumnHeaderStyle="{StaticResource LightHeaderStyle}"
@@ -435,27 +469,64 @@
 
                             <!-- Total summary -->
                             <Border BorderBrush="#1F2937" BorderThickness="1"
-                        Padding="10" Margin="0,12,0,0"
-                        Background="#0F172A">
+                                Padding="10" Margin="0,12,0,0" Background="#0F172A">
                                 <StackPanel>
                                     <TextBlock Text="Ration total" FontWeight="SemiBold"
-                                   Foreground="White" Margin="0,0,0,6"/>
-                                    <TextBlock Text="{Binding RationTotalCalories, StringFormat='Calories: {0:F0} kcal'}"
-                                   Foreground="#94A3B8"/>
-                                    <TextBlock Text="{Binding RationTotalProtein, StringFormat='Protein: {0:F1} g'}"
-                                   Foreground="#94A3B8"/>
-                                    <TextBlock Text="{Binding RationTotalFat, StringFormat='Fat: {0:F1} g'}"
-                                   Foreground="#94A3B8"/>
-                                    <TextBlock Text="{Binding RationTotalCarbs, StringFormat='Carbs: {0:F1} g'}"
-                                   Foreground="#94A3B8"/>
+                                        Foreground="White" Margin="0,0,0,6"/>
+                                    <!-- Calories -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding RationTotalCalories, StringFormat='Calories: {0:F0} kcal'}"
+                                            Foreground="{Binding CaloriesStatusBrush}" MinWidth="200"/>
+                                        <TextBlock Text="{Binding CaloriesStatus}"
+                                            Foreground="{Binding CaloriesStatusBrush}" Margin="8,0,0,0"/>
+                                    </StackPanel>
+                                    <!-- Protein -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding RationTotalProtein, StringFormat='Protein: {0:F1} g'}"
+                                            Foreground="{Binding ProteinStatusBrush}" MinWidth="200"/>
+                                        <TextBlock Text="{Binding ProteinStatus}"
+                                            Foreground="{Binding ProteinStatusBrush}" Margin="8,0,0,0"/>
+                                    </StackPanel>
+                                    <!-- Fat -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding RationTotalFat, StringFormat='Fat: {0:F1} g'}"
+                                            Foreground="{Binding FatStatusBrush}" MinWidth="200"/>
+                                        <TextBlock Text="{Binding FatStatus}"
+                                            Foreground="{Binding FatStatusBrush}" Margin="8,0,0,0"/>
+                                    </StackPanel>
+                                    <!-- Carbs -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding RationTotalCarbs, StringFormat='Carbs: {0:F1} g'}"
+                                            Foreground="{Binding CarbsStatusBrush}" MinWidth="200"/>
+                                        <TextBlock Text="{Binding CarbsStatus}"
+                                            Foreground="{Binding CarbsStatusBrush}" Margin="8,0,0,0"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
 
+                            <!-- Dish ingredients on click -->
+                            <TextBlock Text="Dish ingredients" FontSize="14" FontWeight="SemiBold"
+                               Foreground="#94A3B8" Margin="0,12,0,4"
+                               Visibility="{Binding SelectedRationDish, 
+                                   Converter={StaticResource NullToVisibilityConverter}}"/>
+                            <DataGrid ItemsSource="{Binding SelectedRationDishIngredients}"
+                              AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="130"
+                              Style="{StaticResource LightDataGridStyle}"
+                              ColumnHeaderStyle="{StaticResource LightHeaderStyle}"
+                              Visibility="{Binding SelectedRationDish,
+                                  Converter={StaticResource NullToVisibilityConverter}}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Product"  Binding="{Binding Product.Name}"    Width="2*"/>
+                                    <DataGridTextColumn Header="Grams"    Binding="{Binding QuantityGrams, StringFormat={}{0:F0}}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
                             <Button Content="Save ration to DB"
-                        Command="{Binding SaveRationCommand}"
-                        Margin="0,8,0,0"/>
+                                Command="{Binding SaveRationCommand}"
+                                Margin="0,8,0,0"/>
                         </StackPanel>
                     </Grid>
+                    
                 </ScrollViewer>
             </TabItem>
         </TabControl>

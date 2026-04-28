@@ -10,7 +10,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using ProductsDishes.DataAccess.Postgres;
-using ProductsDishes.DataAccess.Postgres.Repositories;
 
 namespace ProductsDishes
 {
@@ -20,6 +19,8 @@ namespace ProductsDishes
     public partial class MainWindow : Window
     {
         private readonly ProductsDishesDbContext _db;
+
+        private bool _isUpdatingRationSelection = false;
 
         public MainWindow(ProductsDishesDbContext db)
         {
@@ -32,13 +33,34 @@ namespace ProductsDishes
             var dishIngredientsRepository = new DishIngradientsRepository(_db);
             var userRepository = new UsersRepository(_db);
             var dailyRationsRepository = new DailyRationsRepository(_db);
+            var normCoefficientsRepository = new NormCoefficientsRepository(_db);
 
             DataContext = new MainWindowViewModel(
                 dishesRepository,
                 productsRepository,
                 dishIngredientsRepository,
                 userRepository,
-                dailyRationsRepository);
+                dailyRationsRepository,
+                normCoefficientsRepository);
+        }
+
+        private void RationGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isUpdatingRationSelection) return;
+            _isUpdatingRationSelection = true;
+
+            var current = (DataGrid)sender;
+
+            foreach (var grid in new[] { BreakfastGrid, LunchGrid, DinnerGrid })
+            {
+                if (grid != current)
+                    grid.SelectedItem = null;
+            }
+
+            if (DataContext is MainWindowViewModel vm)
+                vm.SelectedRationDish = current.SelectedItem as RationDishViewModel;
+
+            _isUpdatingRationSelection = false;
         }
     }
 }

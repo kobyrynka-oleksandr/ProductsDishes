@@ -22,6 +22,7 @@ namespace ProductsDishes
         private readonly DishIngradientsRepository _dishIngredientsRepository;
         private readonly UsersRepository _usersRepository;
         private readonly DailyRationsRepository _dailyRationsRepository;
+        private readonly NormCoefficientsRepository _normCoefficientsRepository;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -34,6 +35,8 @@ namespace ProductsDishes
         public ObservableCollection<UserEntity> Users { get; } = new();
         public ObservableCollection<DailyRationEntity> DailyRations { get; } = new();
         public ObservableCollection<UserEntity> SavedUsers { get; } = new();
+        public ObservableCollection<DishEntity> AllDishesForPicker { get; } = new();
+        public ObservableCollection<DishIngradientEntity> SelectedRationDishIngredients { get; } = new();
 
         // ======= Ration collections =======
 
@@ -135,6 +138,52 @@ namespace ProductsDishes
         public decimal RationTotalFat { get; private set; }
         public decimal RationTotalCarbs { get; private set; }
 
+        // ======= Norm coefficients state =======
+        private decimal _minCoeff = 0.90m;
+        private decimal _maxCoeff = 1.10m;
+
+        // ======= Manual ration selection =======
+        private DishEntity? _selectedDishForRation;
+        public DishEntity? SelectedDishForRation
+        {
+            get => _selectedDishForRation;
+            set { _selectedDishForRation = value; OnPropertyChanged(); }
+        }
+
+        private string _selectedMealType = "Breakfast";
+        public string SelectedMealType
+        {
+            get => _selectedMealType;
+            set { _selectedMealType = value; OnPropertyChanged(); }
+        }
+
+        // ======= Ration dish ingredients =======
+        private RationDishViewModel? _selectedRationDish;
+        public RationDishViewModel? SelectedRationDish
+        {
+            get => _selectedRationDish;
+            set { _selectedRationDish = value; OnPropertyChanged(); _ = LoadRationDishIngredientsAsync(value); }
+        }
+
+        // ======= Allow dish repetition =======
+        private bool _allowDishRepetition;
+        public bool AllowDishRepetition
+        {
+            get => _allowDishRepetition;
+            set { _allowDishRepetition = value; OnPropertyChanged(); }
+        }
+
+        // ======= Status indicators =======
+        public string CaloriesStatus => GetNormStatus(RationTotalCalories, DailyCaloriesNorm);
+        public string ProteinStatus => GetNormStatus(RationTotalProtein, DailyProteinNorm);
+        public string FatStatus => GetNormStatus(RationTotalFat, DailyFatNorm);
+        public string CarbsStatus => GetNormStatus(RationTotalCarbs, DailyCarbsNorm);
+
+        public System.Windows.Media.Brush CaloriesStatusBrush => GetNormBrush(RationTotalCalories, DailyCaloriesNorm);
+        public System.Windows.Media.Brush ProteinStatusBrush => GetNormBrush(RationTotalProtein, DailyProteinNorm);
+        public System.Windows.Media.Brush FatStatusBrush => GetNormBrush(RationTotalFat, DailyFatNorm);
+        public System.Windows.Media.Brush CarbsStatusBrush => GetNormBrush(RationTotalCarbs, DailyCarbsNorm);
+
         // ======= Paging =======
 
         public int ProductsPageSize { get; } = 25;
@@ -214,6 +263,9 @@ namespace ProductsDishes
 
         public ICommand EditDishIngredientsCommand { get; }
 
+        public ICommand AddDishToRationCommand { get; }
+        public ICommand RemoveDishFromRationCommand { get; }
+
         // ======= Commands: products =======
 
         public ICommand AddProductCommand { get; }
@@ -248,11 +300,13 @@ namespace ProductsDishes
             ProductsRepository productsRepository,
             DishIngradientsRepository dishIngredientsRepository,
             UsersRepository usersRepository,
-            DailyRationsRepository dailyRationsRepository)
+            DailyRationsRepository dailyRationsRepository,
+            NormCoefficientsRepository normCoefficientsRepository)
         {
             _dishesRepository = dishesRepository;
             _productsRepository = productsRepository;
             _dishIngredientsRepository = dishIngredientsRepository;
+            _normCoefficientsRepository = normCoefficientsRepository;
 
             // dishes
             AddDishCommand = new RelayCommand(async _ => await AddDishAsync());
@@ -293,6 +347,11 @@ namespace ProductsDishes
             LoadRationCommand = new RelayCommand(async _ => await LoadSelectedRationAsync(), _ => SelectedRationDate != null);
             DeleteRationCommand = new RelayCommand(async _ => await DeleteSelectedRationAsync(), _ => SelectedRationDate != null);
 
+            AddDishToRationCommand = new RelayCommand(async _ => await AddDishToRationManuallyAsync(),
+                                _ => SelectedDishForRation != null);
+            RemoveDishFromRationCommand = new RelayCommand(_ => RemoveDishFromRation(SelectedRationDish),
+                                            _ => SelectedRationDish != null);
+
             _ = LoadAllAsync();
         }
 
@@ -305,6 +364,7 @@ namespace ProductsDishes
             await LoadProductsPageAsync();
             await LoadSavedUsersAsync();
             await LoadSavedRationDatesAsync();
+            await LoadAllDishesForPickerAsync();
         }
 
         private async Task LoadProductsPageAsync()
@@ -464,10 +524,9 @@ namespace ProductsDishes
             }
             try
             {
-                await _dishesRepository.Update(SelectedDish.Id,
-                    EditDishName,
-                    EditDishDescription,
-                    SelectedDish.Ingredients);
+                var fullDish = await _dishesRepository.GetWithIngredientsAsync(SelectedDish.Id);
+                await _dishesRepository.Update(SelectedDish.Id, EditDishName, EditDishDescription,
+                    fullDish?.Ingredients ?? new List<DishIngradientEntity>());
 
                 await LoadAllAsync();
             }
@@ -837,6 +896,7 @@ namespace ProductsDishes
 
                 await LoadSavedUsersAsync();
                 await LoadSavedRationDatesAsync();
+                await LoadNormCoefficientsAsync();
 
                 MessageBox.Show("Profile saved!", "Success",
                     MessageBoxButton.OK, MessageBoxImage.Information);
@@ -937,9 +997,9 @@ namespace ProductsDishes
 
             var usedIds = new HashSet<Guid>();
 
-            FillMealNoDupes(BreakfastDishes, shuffled, breakfastTarget, "Breakfast", usedIds);
-            FillMealNoDupes(LunchDishes, shuffled, lunchTarget, "Lunch", usedIds);
-            FillMealNoDupes(DinnerDishes, shuffled, dinnerTarget, "Dinner", usedIds);
+            FillMeal(BreakfastDishes, shuffled, breakfastTarget, "Breakfast", usedIds, AllowDishRepetition);
+            FillMeal(LunchDishes, shuffled, lunchTarget, "Lunch", usedIds, AllowDishRepetition);
+            FillMeal(DinnerDishes, shuffled, dinnerTarget, "Dinner", usedIds, AllowDishRepetition);
 
             RecalculateRationTotals();
         }
@@ -969,44 +1029,44 @@ namespace ProductsDishes
             };
         }
 
-        private static void FillMealNoDupes(
-            ObservableCollection<RationDishViewModel> collection,
-            List<RationDishViewModel> pool,
-            decimal targetCalories,
-            string mealType,
-            HashSet<Guid> usedIds)
+        private static void FillMeal(
+    ObservableCollection<RationDishViewModel> collection,
+    List<RationDishViewModel> pool,
+    decimal targetCalories,
+    string mealType,
+    HashSet<Guid> usedIds,
+    bool allowRepetition)      // ← NEW
         {
             decimal accumulated = 0;
             decimal tolerance = targetCalories * 0.10m;
 
             foreach (var dish in pool)
             {
-                if (usedIds.Contains(dish.DishId)) continue;
+                if (!allowRepetition && usedIds.Contains(dish.DishId)) continue;  // ← змінено
                 if (accumulated >= targetCalories + tolerance) break;
 
                 decimal remaining = targetCalories - accumulated;
-                if (dish.TotalCalories > remaining + tolerance && accumulated > 0)
-                    continue;
+                if (dish.TotalCalories > remaining + tolerance && accumulated > 0) continue;
 
                 collection.Add(new RationDishViewModel
                 {
                     DishId = dish.DishId,
                     Name = dish.Name,
+                    MealType = mealType,
                     TotalCalories = dish.TotalCalories,
                     TotalProtein = dish.TotalProtein,
                     TotalFat = dish.TotalFat,
                     TotalCarbs = dish.TotalCarbs,
-                    MealType = mealType
                 });
 
-                usedIds.Add(dish.DishId);
+                if (!allowRepetition) usedIds.Add(dish.DishId);
                 accumulated += dish.TotalCalories;
             }
 
             if (collection.Count == 0)
             {
                 var fallback = pool
-                    .Where(d => !usedIds.Contains(d.DishId))
+                    .Where(d => allowRepetition || !usedIds.Contains(d.DishId))
                     .OrderBy(d => Math.Abs(d.TotalCalories - targetCalories))
                     .FirstOrDefault();
 
@@ -1016,13 +1076,13 @@ namespace ProductsDishes
                     {
                         DishId = fallback.DishId,
                         Name = fallback.Name,
+                        MealType = mealType,
                         TotalCalories = fallback.TotalCalories,
                         TotalProtein = fallback.TotalProtein,
                         TotalFat = fallback.TotalFat,
                         TotalCarbs = fallback.TotalCarbs,
-                        MealType = mealType
                     });
-                    usedIds.Add(fallback.DishId);
+                    if (!allowRepetition) usedIds.Add(fallback.DishId);
                 }
             }
         }
@@ -1038,6 +1098,8 @@ namespace ProductsDishes
             OnPropertyChanged(nameof(RationTotalProtein));
             OnPropertyChanged(nameof(RationTotalFat));
             OnPropertyChanged(nameof(RationTotalCarbs));
+
+            RaiseStatusChanged();
         }
 
         // ======= Ration: save to DB =======
@@ -1122,6 +1184,8 @@ namespace ProductsDishes
                 SelectedUser.Gender,
                 SelectedUser.ActivityLevel,
                 SelectedUser.Goal);
+
+            await LoadNormCoefficientsAsync();
         }
 
         // ======= Delete selected profile =======
@@ -1238,6 +1302,98 @@ namespace ProductsDishes
                 MessageBox.Show(ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        // ======= Manual addition of dish =======
+
+        private async Task AddDishToRationManuallyAsync()
+        {
+            if (SelectedDishForRation == null) return;
+
+            var fullDish = await _dishesRepository.GetWithIngredientsAsync(SelectedDishForRation.Id);
+            if (fullDish == null) return;
+
+            var vm = ToRationVm(fullDish);
+            vm.MealType = SelectedMealType;
+
+            switch (SelectedMealType)
+            {
+                case "Breakfast": BreakfastDishes.Add(vm); break;
+                case "Lunch": LunchDishes.Add(vm); break;
+                case "Dinner": DinnerDishes.Add(vm); break;
+            }
+
+            RecalculateRationTotals();
+        }
+
+        private void RemoveDishFromRation(RationDishViewModel? dish)
+        {
+            if (dish == null) return;
+            BreakfastDishes.Remove(dish);
+            LunchDishes.Remove(dish);
+            DinnerDishes.Remove(dish);
+            RecalculateRationTotals();
+            SelectedRationDish = null;
+        }
+
+        // ======= Norm status =======
+
+        private string GetNormStatus(decimal actual, decimal norm)
+        {
+            if (norm == 0) return string.Empty;
+            var ratio = actual / norm;
+            if (ratio < _minCoeff) return "⬇ Deficit";
+            if (ratio > _maxCoeff) return "⬆ Excess";
+            return "Normal";
+        }
+
+        private System.Windows.Media.Brush GetNormBrush(decimal actual, decimal norm)
+        {
+            if (norm == 0) return System.Windows.Media.Brushes.Gray;
+            var ratio = actual / norm;
+            if (ratio < _minCoeff) return System.Windows.Media.Brushes.Yellow;
+            if (ratio > _maxCoeff) return System.Windows.Media.Brushes.OrangeRed;
+            return System.Windows.Media.Brushes.LightGreen;
+        }
+
+        private async Task LoadNormCoefficientsAsync()
+        {
+            if (_currentUser == null) return;
+            var coeff = await _normCoefficientsRepository.GetByUserGoalAsync(_currentUser.Id);
+            if (coeff == null) return;
+            _minCoeff = coeff.MinCoefficient;
+            _maxCoeff = coeff.MaxCoefficient;
+            RaiseStatusChanged();
+        }
+
+        private void RaiseStatusChanged()
+        {
+            OnPropertyChanged(nameof(CaloriesStatus)); OnPropertyChanged(nameof(CaloriesStatusBrush));
+            OnPropertyChanged(nameof(ProteinStatus)); OnPropertyChanged(nameof(ProteinStatusBrush));
+            OnPropertyChanged(nameof(FatStatus)); OnPropertyChanged(nameof(FatStatusBrush));
+            OnPropertyChanged(nameof(CarbsStatus)); OnPropertyChanged(nameof(CarbsStatusBrush));
+        }
+
+        // ======= Ingredients of the dish in the ration =======
+
+        private async Task LoadRationDishIngredientsAsync(RationDishViewModel? vm)
+        {
+            SelectedRationDishIngredients.Clear();
+            if (vm == null) return;
+            var dish = await _dishesRepository.GetWithIngredientsAsync(vm.DishId);
+            if (dish?.Ingredients == null) return;
+            foreach (var ing in dish.Ingredients)
+                SelectedRationDishIngredients.Add(ing);
+        }
+
+        // ======= Loading the dish picker =======
+
+        private async Task LoadAllDishesForPickerAsync()
+        {
+            AllDishesForPicker.Clear();
+            var list = await _dishesRepository.GetAllForPickerAsync();
+            foreach (var d in list)
+                AllDishesForPicker.Add(d);
         }
         // ======= INotifyPropertyChanged =======
 

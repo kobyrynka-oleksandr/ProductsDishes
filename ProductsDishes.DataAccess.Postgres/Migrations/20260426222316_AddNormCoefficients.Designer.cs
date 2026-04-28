@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ProductsDishes.DataAccess.Postgres;
@@ -11,9 +12,11 @@ using ProductsDishes.DataAccess.Postgres;
 namespace ProductsDishes.DataAccess.Postgres.Migrations
 {
     [DbContext(typeof(ProductsDishesDbContext))]
-    partial class ProductsDishesDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260426222316_AddNormCoefficients")]
+    partial class AddNormCoefficients
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -119,8 +122,7 @@ namespace ProductsDishes.DataAccess.Postgres.Migrations
 
                     b.Property<string>("Goal")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
                     b.Property<decimal>("MaxCoefficient")
                         .HasColumnType("numeric");
@@ -131,29 +133,6 @@ namespace ProductsDishes.DataAccess.Postgres.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("NormCoefficients");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("aaaaaaaa-0000-0000-0000-000000000001"),
-                            Goal = "Lose weight",
-                            MaxCoefficient = 1.05m,
-                            MinCoefficient = 0.85m
-                        },
-                        new
-                        {
-                            Id = new Guid("aaaaaaaa-0000-0000-0000-000000000002"),
-                            Goal = "Maintain weight",
-                            MaxCoefficient = 1.10m,
-                            MinCoefficient = 0.90m
-                        },
-                        new
-                        {
-                            Id = new Guid("aaaaaaaa-0000-0000-0000-000000000003"),
-                            Goal = "Gain weight",
-                            MaxCoefficient = 1.15m,
-                            MinCoefficient = 0.95m
-                        });
                 });
 
             modelBuilder.Entity("ProductsDishes.DataAccess.Postgres.Models.ProductEntity", b =>

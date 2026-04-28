@@ -15,12 +15,15 @@ namespace ProductsDishes.DataAccess.Postgres
             : base(options)
         {
         }
-        public DbSet<Models.ProductEntity> Products { get; set; } = null!;
-        public DbSet<Models.DishEntity> Dishes { get; set; } = null!;
-        public DbSet<Models.DishIngradientEntity> DishIngredients { get; set; } = null!;
-        public DbSet<Models.UserEntity> Users { get; set; } = null!;
-        public DbSet<Models.DailyRationEntity> DailyRations { get; set; } = null!;
-        public DbSet<DailyRationDishEntity> DailyRationDishes { get; set; }
+
+        public DbSet<ProductEntity> Products { get; set; } = null!;
+        public DbSet<DishEntity> Dishes { get; set; } = null!;
+        public DbSet<DishIngradientEntity> DishIngredients { get; set; } = null!;
+        public DbSet<UserEntity> Users { get; set; } = null!;
+        public DbSet<DailyRationEntity> DailyRations { get; set; } = null!;
+        public DbSet<DailyRationDishEntity> DailyRationDishes { get; set; } = null!;
+        public DbSet<NormCoefficientEntity> NormCoefficients { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new ProductConfiguration());
@@ -29,6 +32,7 @@ namespace ProductsDishes.DataAccess.Postgres
             modelBuilder.ApplyConfiguration(new UserConfiguration());
             modelBuilder.ApplyConfiguration(new DailyRationConfiguration());
             modelBuilder.ApplyConfiguration(new DailyRationDishConfiguration());
+            modelBuilder.ApplyConfiguration(new NormCoefficientConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }
