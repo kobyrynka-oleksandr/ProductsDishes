@@ -292,6 +292,7 @@ namespace ProductsDishes
         public ICommand DeleteUserCommand { get; }
         public ICommand LoadRationCommand { get; }
         public ICommand DeleteRationCommand { get; }
+        public ICommand NewProfileCommand { get; }
 
         // ======= Ctor =======
 
@@ -351,6 +352,8 @@ namespace ProductsDishes
                                 _ => SelectedDishForRation != null);
             RemoveDishFromRationCommand = new RelayCommand(_ => RemoveDishFromRation(SelectedRationDish),
                                             _ => SelectedRationDish != null);
+
+            NewProfileCommand = new RelayCommand(async _ => await ClearProfileForNew());
 
             _ = LoadAllAsync();
         }
@@ -881,19 +884,16 @@ namespace ProductsDishes
                     var id = Guid.NewGuid();
                     await _usersRepository.Add(id, UserName, age, height, weight,
                         UserGender, UserActivityLevel, UserGoal);
-
                     _currentUser = await _usersRepository.GetById(id);
                 }
                 else
                 {
                     await _usersRepository.Update(_currentUser.Id, UserName, age, height, weight,
                         UserGender, UserActivityLevel, UserGoal);
-
                     _currentUser = await _usersRepository.GetById(_currentUser.Id);
                 }
 
                 RecalculateNorms(weight, height, age, UserGender, UserActivityLevel, UserGoal);
-
                 await LoadSavedUsersAsync();
                 await LoadSavedRationDatesAsync();
                 await LoadNormCoefficientsAsync();
@@ -919,6 +919,26 @@ namespace ProductsDishes
             if (!decimal.TryParse(UserHeight, System.Globalization.NumberStyles.Any, culture, out height)) return false;
 
             return true;
+        }
+
+        private async Task ClearProfileForNew()
+        {
+            _currentUser = null;
+            UserName = string.Empty;
+            UserAge = string.Empty;
+            UserWeight = string.Empty;
+            UserHeight = string.Empty;
+            UserGender = "Male";
+            UserActivityLevel = "Sedentary";
+            UserGoal = "Maintain weight";
+
+            OnPropertyChanged(nameof(UserName));
+            OnPropertyChanged(nameof(UserAge));
+            OnPropertyChanged(nameof(UserWeight));
+            OnPropertyChanged(nameof(UserHeight));
+            OnPropertyChanged(nameof(UserGender));
+            OnPropertyChanged(nameof(UserActivityLevel));
+            OnPropertyChanged(nameof(UserGoal));
         }
 
         // ======= Norm calculation (Mifflin-St Jeor) =======
@@ -1030,19 +1050,19 @@ namespace ProductsDishes
         }
 
         private static void FillMeal(
-    ObservableCollection<RationDishViewModel> collection,
-    List<RationDishViewModel> pool,
-    decimal targetCalories,
-    string mealType,
-    HashSet<Guid> usedIds,
-    bool allowRepetition)      // ← NEW
+            ObservableCollection<RationDishViewModel> collection,
+            List<RationDishViewModel> pool,
+            decimal targetCalories,
+            string mealType,
+            HashSet<Guid> usedIds,
+            bool allowRepetition)
         {
             decimal accumulated = 0;
             decimal tolerance = targetCalories * 0.10m;
 
             foreach (var dish in pool)
             {
-                if (!allowRepetition && usedIds.Contains(dish.DishId)) continue;  // ← змінено
+                if (!allowRepetition && usedIds.Contains(dish.DishId)) continue;
                 if (accumulated >= targetCalories + tolerance) break;
 
                 decimal remaining = targetCalories - accumulated;
