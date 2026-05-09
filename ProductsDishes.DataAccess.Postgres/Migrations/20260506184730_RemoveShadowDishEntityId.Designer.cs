@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ProductsDishes.DataAccess.Postgres;
@@ -11,9 +12,11 @@ using ProductsDishes.DataAccess.Postgres;
 namespace ProductsDishes.DataAccess.Postgres.Migrations
 {
     [DbContext(typeof(ProductsDishesDbContext))]
-    partial class ProductsDishesDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260506184730_RemoveShadowDishEntityId")]
+    partial class RemoveShadowDishEntityId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -124,9 +127,6 @@ namespace ProductsDishes.DataAccess.Postgres.Migrations
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Goal")
-                        .IsUnique();
 
                     b.ToTable("NormCoefficients");
 

@@ -14,6 +14,7 @@ namespace ProductsDishes.DataAccess.Postgres.Configurations
         public void Configure(EntityTypeBuilder<NormCoefficientEntity> builder)
         {
             builder.HasKey(x => x.Id);
+            builder.HasIndex(x => x.Goal).IsUnique();
             builder.Property(x => x.Goal).IsRequired().HasMaxLength(50);
             builder.Property(x => x.MinCoefficient).IsRequired();
             builder.Property(x => x.MaxCoefficient).IsRequired();
